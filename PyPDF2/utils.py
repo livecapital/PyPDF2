@@ -27,28 +27,23 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
 """
 Utility functions for PDF library.
 """
 __author__ = "Mathieu Fenniak"
 __author_email__ = "biziqe@mathieu.fenniak.net"
 
-#ENABLE_PSYCO = False
-#if ENABLE_PSYCO:
-#    try:
-#        import psyco
-#    except ImportError:
-#        ENABLE_PSYCO = False
-#
-#if not ENABLE_PSYCO:
-#    class psyco:
-#        def proxy(func):
-#            return func
-#        proxy = staticmethod(proxy)
+#custom implementation of warnings.formatwarning 
+def _formatwarning(message, category, filename, lineno, line=None):
+    file = filename.replace("/", "\\").rsplit("\\", 1)[1] # find the file name
+    return "%s: %s [%s:%s]\n" % (category.__name__, message, file, lineno)
 
 def readUntilWhitespace(stream, maxchars=None):
-    txt = ""
+    """
+    Reads non-whitespace characters and returns them.
+    Stops upon encountering whitespace or when maxchars is reached.
+    """
+    txt = b_("")
     while True:
         tok = stream.read(1)
         if tok.isspace() or not tok:
@@ -59,10 +54,32 @@ def readUntilWhitespace(stream, maxchars=None):
     return txt
 
 def readNonWhitespace(stream):
-    tok = ' '
-    while tok == '\n' or tok == '\r' or tok == ' ' or tok == '\t':
+    """
+    Finds and reads the next non-whitespace character (ignores whitespace).
+    """
+    tok = b_(' ')
+    while tok == b_('\n') or tok == b_('\r') or tok == b_(' ') or tok == b_('\t'):
         tok = stream.read(1)
     return tok
+
+def skipOverWhitespace(stream):
+    """
+    Similar to readNonWhitespace, but returns a Boolean if more than
+    one whitespace character was read.
+    """
+    tok = b_(' ')
+    cnt = 0;
+    while tok == b_('\n') or tok == b_('\r') or tok == b_(' ') or tok == b_('\t'):
+        tok = stream.read(1)
+        cnt+=1
+    return (cnt > 1)
+
+def skipOverComment(stream):
+    tok = stream.read(1)
+    stream.seek(-1, 1)
+    if tok == b_('%'):
+        while tok not in (b_('\n'), b_('\r')):
+            tok = stream.read(1)
 
 class ConvertFunctionsToVirtualList(object):
     def __init__(self, lengthFunction, getFunction):
@@ -74,29 +91,29 @@ class ConvertFunctionsToVirtualList(object):
 
     def __getitem__(self, index):
         if not isinstance(index, int):
-            raise TypeError, "sequence indices must be integers"
+            raise TypeError("sequence indices must be integers")
         len_self = len(self)
         if index < 0:
             # support negative indexes
             index = len_self + index
         if index < 0 or index >= len_self:
-            raise IndexError, "sequence index out of range"
+            raise IndexError("sequence index out of range")
         return self.getFunction(index)
 
 def RC4_encrypt(key, plaintext):
     S = [i for i in range(256)]
     j = 0
     for i in range(256):
-        j = (j + S[i] + ord(key[i % len(key)])) % 256
+        j = (j + S[i] + ord_(key[i % len(key)])) % 256
         S[i], S[j] = S[j], S[i]
     i, j = 0, 0
-    retval = ""
+    retval = b_("")
     for x in range(len(plaintext)):
         i = (i + 1) % 256
         j = (j + S[i]) % 256
         S[i], S[j] = S[j], S[i]
         t = S[(S[i] + S[j]) % 256]
-        retval += chr(ord(plaintext[x]) ^ t)
+        retval += b_(chr(ord_(plaintext[x]) ^ t))
     return retval
 
 def matrixMultiply(a, b):
@@ -104,6 +121,18 @@ def matrixMultiply(a, b):
                   for i, j in zip(row, col)]
                 ) for col in zip(*b)]
             for row in a]
+
+def markLocation(stream):
+    """Creates text file showing current location in context."""
+    # Mainly for debugging
+    RADIUS = 5000
+    stream.seek(-RADIUS, 1)
+    outputDoc = open('PyPDF2_pdfLocation.txt', 'w')
+    outputDoc.write(stream.read(RADIUS))
+    outputDoc.write('HERE')
+    outputDoc.write(stream.read(RADIUS))
+    outputDoc.close()
+    stream.seek(-RADIUS, 1)
 
 class PyPdfError(Exception):
     pass
@@ -117,9 +146,68 @@ class PageSizeNotDefinedError(PyPdfError):
 class PdfReadWarning(UserWarning):
     pass
 
-if __name__ == "__main__":
-    # test RC4
-    out = RC4_encrypt("Key", "Plaintext")
-    print repr(out)
-    pt = RC4_encrypt("Key", out)
-    print repr(pt)
+class PdfStreamError(PdfReadError):
+    pass
+
+def hexStr(num):
+    return hex(num).replace('L', '')
+
+import sys
+
+def b_(s):
+    if sys.version_info[0] < 3:
+        return s
+    else:
+        if type(s) == bytes:
+            return s
+        else:
+            return s.encode('latin-1')
+
+def u_(s):
+    if sys.version_info[0] < 3:
+        return unicode(s, 'unicode_escape')
+    else:
+        return s
+
+
+def str_(b):
+    if sys.version_info[0] < 3:
+        return b
+    else:
+        if type(b) == bytes:
+            return b.decode('latin-1')
+        else:
+            return b
+
+def ord_(b):
+    if sys.version_info[0] < 3 or type(b) == str:
+        return ord(b)
+    else:
+        return b
+
+def chr_(c):
+    if sys.version_info[0] < 3:
+        return c
+    else:
+        return chr(c)
+
+def barray(b):
+    if sys.version_info[0] < 3:
+        return b
+    else:
+        return bytearray(b)
+
+def hexencode(b):
+    if sys.version_info[0] < 3:
+        return b.encode('hex')
+    else:
+        import codecs
+        coder = codecs.getencoder('hex_codec')
+        return coder(b)[0]
+
+if sys.version_info[0] < 3:
+    string_type = unicode
+    bytes_type = str
+else:
+    string_type = str
+    bytes_type = bytes
