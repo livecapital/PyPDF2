@@ -235,7 +235,7 @@ class FloatObject(decimal.Decimal, PdfObject):
 
 class NumberObject(int, PdfObject):
     def __init__(self, value):
-        int.__init__(value)
+        int.__init__(self, value)
 
     def as_numeric(self):
         return int(b_(repr(self)))
@@ -447,7 +447,7 @@ class NameObject(str, PdfObject):
     delimiterCharacters = b_("("), b_(")"), b_("<"), b_(">"), b_("["), b_("]"), b_("{"), b_("}"), b_("/"), b_("%")
 
     def __init__(self, data):
-        str.__init__(data)
+        str.__init__(self, data)
 
     def writeToStream(self, stream, encryption_key):
         stream.write(b_(self))
