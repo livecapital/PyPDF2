@@ -98,7 +98,7 @@ class PdfFileMerger(object):
         # it is a PdfFileReader, copy that reader's stream into a
         # StringIO stream.
         # If fileobj is none of the above types, it is not modified
-        if type(fileobj) in (str, str):
+        if type(fileobj) is str:
             fileobj = file(fileobj, 'rb')
             my_file = True
         elif isinstance(fileobj, file):
@@ -185,7 +185,7 @@ class PdfFileMerger(object):
         kind of file-like object)
         """
         my_file = False
-        if type(fileobj) in (str, str):
+        if type(fileobj) is str:
             fileobj = file(fileobj, 'wb')
             my_file = True
 

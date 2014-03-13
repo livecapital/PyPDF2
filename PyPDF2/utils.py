@@ -158,7 +158,7 @@ def b_(s):
     if sys.version_info[0] < 3:
         return s
     else:
-        if type(s) == bytes:
+        if type(s) is bytes:
             return s
         else:
             return s.encode('latin-1')
@@ -174,13 +174,13 @@ def str_(b):
     if sys.version_info[0] < 3:
         return b
     else:
-        if type(b) == bytes:
+        if type(b) is bytes:
             return b.decode('latin-1')
         else:
             return b
 
 def ord_(b):
-    if sys.version_info[0] < 3 or type(b) == str:
+    if sys.version_info[0] < 3 or type(b) is str:
         return ord(b)
     else:
         return b
