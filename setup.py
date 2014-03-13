@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+import PyPDF2
 
 long_description = """
 A Pure-Python library built as a PDF toolkit.  It is capable of:
@@ -20,7 +21,7 @@ It is therefore a useful tool for websites that manage or manipulate PDFs.
 
 setup(
         name="PyPDF2",
-        version="1.20",
+        version=PyPDF2.__version__,
         description="PDF toolkit",
         long_description=long_description,
         author="Phaseit, Inc.",
